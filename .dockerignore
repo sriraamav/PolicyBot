@@ -1,0 +1,5 @@
+rag_lc/
+__pycache__/
+.dist/
+.env
+.git/
