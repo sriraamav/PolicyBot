@@ -60,7 +60,7 @@ def chat():
 
     
     llm = ChatOpenAI(
-        model="nvidia/nemotron-3-nano-30b-a3b:free", 
+        model="xiaomi/mimo-v2-flash:free", 
         openai_api_key=OS_OPENROUTER_API_KEY,
         openai_api_base="https://openrouter.ai/api/v1",
         default_headers={
@@ -138,6 +138,18 @@ def chat():
         for i, d in enumerate(docs):
             source = d.metadata.get('source', 'Unknown')
             print(f"   - Doc {i+1}: {os.path.basename(source)}")
+
+        print(f"\n[DEBUG] Top {len(docs)} Chunks Sent to LLM:")
+        print("-" * 50)
+
+        for i, d in enumerate(docs):
+            source = d.metadata.get('source', 'Unknown')
+            # Use .replace to clean up newlines for easier console reading
+            content_snippet = d.page_content.replace('\n', ' ')[:200] 
+            
+            print(f"RANK {i+1} | Source: {os.path.basename(source)}")
+            print(f"TEXT: {content_snippet}...")
+            print("-" * 30)
 
 
 

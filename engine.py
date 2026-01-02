@@ -46,9 +46,9 @@ def get_rag_chain():
     )
 
  
-    base_retriever = vectorstore.as_retriever(search_kwargs={"k": 15})
+    base_retriever = vectorstore.as_retriever(search_kwargs={"k": 25})
 
-    compressor = FlashrankRerank(model="ms-marco-MiniLM-L-12-v2", top_n=4)
+    compressor = FlashrankRerank(model="ms-marco-MiniLM-L-12-v2", top_n=5)
 
     retriever = ContextualCompressionRetriever(
         base_compressor=compressor, 
@@ -57,14 +57,14 @@ def get_rag_chain():
 
     
     llm = ChatOpenAI(
-        model="nvidia/nemotron-3-nano-30b-a3b:free", 
+        model="xiaomi/mimo-v2-flash:free", 
         openai_api_key=OS_OPENROUTER_API_KEY,
         openai_api_base="https://openrouter.ai/api/v1",
         default_headers={
             "HTTP-Referer": "http://localhost:3000", 
             "X-Title": "Local SOP Bot",             
         },
-        temperature=0.1,
+        temperature=0.0,
         streaming=True 
     )
 

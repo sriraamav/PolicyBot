@@ -1,10 +1,13 @@
 import os
 import uvicorn
+import json        
+import asyncio     
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
 
 from engine import get_rag_chain, AMBIGUITY_MAP
 
@@ -12,14 +15,14 @@ load_dotenv()
 OS_OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 llm = ChatOpenAI(
-        model="nvidia/nemotron-3-nano-30b-a3b:free", 
+        model="xiaomi/mimo-v2-flash:free", 
         openai_api_key=OS_OPENROUTER_API_KEY,
         openai_api_base="https://openrouter.ai/api/v1",
         default_headers={
             "HTTP-Referer": "http://localhost:3000", 
             "X-Title": "Local SOP Bot",             
         },
-        temperature=0.1,
+        temperature=0.0,
         streaming=True 
     )
 
@@ -48,7 +51,7 @@ async def chat_endpoint(request: ChatRequest):
             "status": "success"
         }
 
-    if len(user_query.split()) < 4: 
+    if len(user_query.split()) < 3: 
         intent_prompt = f"Is the following text a social greeting/small talk or a technical question about school policies? Answer ONLY 'Social' or 'Technical'. \nText: {user_query}"
         intent_result = llm.invoke(intent_prompt).content.strip()
         
@@ -69,12 +72,23 @@ async def chat_endpoint(request: ChatRequest):
                     
                     "status": "ambiguous"
                 }
+            
+    async def event_generator():
+        try:
+            # We use astream for token-by-token output
+            async for chunk in rag_chain.astream(user_query):
+                # We send data in a format the frontend can easily parse
+                yield f"data: {json.dumps({'text': chunk, 'status': 'streaming'})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'text': str(e), 'status': 'error'})}\n\n"
 
-    try:
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+'''   try:
         response = rag_chain.invoke(user_query)
         return {"reply": response, "status": "success"}
     except Exception as e:
-        return {"reply": f"An error occurred: {str(e)}", "status": "error"}
+        return {"reply": f"An error occurred: {str(e)}", "status": "error"}'''
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
